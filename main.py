@@ -1,4 +1,6 @@
 from selenium.webdriver import Chrome, ChromeOptions
+from lxml import html
+from bs4 import BeautifulSoup
 
 
 def option_adding_xpath_helper():
@@ -16,17 +18,13 @@ def _main():
         element_candidates = func(c, element_candidates)
 
 
-def _get_tree_location(element):
-    path = element.tagname
-    while True:
-        parent = element.parent
-        path = parent.tagname + '/' + path
-
-
 def get_url(c, element_candidates):
     print("input url:")
     url = input()
-    c.get(url)
+    try:
+        c.get(url)
+    except (Exception, ) as e:
+        print(e)
     return element_candidates
 
 
@@ -36,19 +34,26 @@ def reset_filtering(c, element_candidates):
 
 
 def _sort_elements(elements):
-    elements.sort(key=lambda x: _get_tree_location(x), reverse=False)
+    elements.sort(key=lambda x: x.treepath, reverse=False)
     return elements
+
+
+def _xpath_func(c, xpath_):
+    lxml_elements = html.fromstring(c.page_source).xpath(xpath_)
+    paths = [le.getroottree().getpath(le) for le in lxml_elements]
+    raw_elements = []
+    for path in paths:
+        e = c.find_element_by_xpath(path)
+        e.treepath = path
+        raw_elements.append(e)
+    return raw_elements
 
 
 def filter_by_xpath(c, element_candidates):
     print("input xpath:")
     xpath_ = input()
-    try:
-        raw_elements = c.find_elements_by_xpath(xpath_)
-        print(f"xpath found {len(raw_elements)} elements")
-    except (Exception, ) as e:
-        print(e)
-        return element_candidates
+    raw_elements = _xpath_func(c, xpath_)
+    print(f"xpath found {len(raw_elements)} elements")
     common_elements = _exact_common(raw_elements, element_candidates)
     common_elements = _sort_elements(common_elements)
     return common_elements
@@ -68,16 +73,20 @@ def _exact_common(raw_elements, element_candidates):
 def show_elements(c, element_candidates):
     print(f"there are {len(element_candidates)} elements.")
     for i,  element in enumerate(element_candidates):
-        path = _get_tree_location(element)
-        print(f"{i}, {element.tagname}, len:{element}, {path}")
+        path = element.treepath
+        print(
+            f"{i}, {element.tag_name}, len:{len(element.get_attribute('outerHTML'))}, {path}")
     return element_candidates
 
 
-def show_an_element_detail(c, element_candidates):
+def print_outerHTML(c, element_candidates):
     print(f"input number (which command '{show_elements.__name__}' tell you):")
     number = input()
     try:
         element = element_candidates[int(number)]
+    except (IndexError, ) as e:
+        print(e)
+        print("len(element_candidates) = {len(element_candidates)}")
     except (Exception, ) as e:
         print(e)
     else:
@@ -87,13 +96,16 @@ def show_an_element_detail(c, element_candidates):
 
 
 def _show_an_element_detail_print_func(element):
-    print(element.tagname)
-    print(_get_tree_location(element))
-    print(element.get_attribute("outerHTML"))
+    outerHTML = element.get_attribute("outerHTML")
+    soup = BeautifulSoup(outerHTML)
+    print(element.tag_name)
+    print(element.treepath)
+    print(soup.prettify())
 
 
 def _recv_commands():
-    funcs = [get_url, filter_by_xpath, show_elements, reset_filtering]
+    funcs = [get_url, filter_by_xpath, show_elements,
+             print_outerHTML, reset_filtering]
     names = [_insert_bracket(f.__name__) for f in funcs]
     dict_input_to_names = {
         name[1: 4]:  func for name, func in zip(names, funcs)}

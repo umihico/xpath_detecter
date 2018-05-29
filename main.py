@@ -41,14 +41,14 @@ def filter_by_xpath(c, element_candidates):
     except (Exception, ) as e:
         print(e)
         return element_candidates
-    raw_element_ids = map(lambda x: x.id, raw_elements)
-    element_candidate_ids = map(lambda x: x.id, element_candidates)
-    common_elements = _exact_common(raw_element_ids, element_candidates)
+    common_elements = _exact_common(raw_elements, element_candidates)
     common_elements = _sort_elements(common_elements)
     return common_elements
 
 
-def _exact_common(raw_element_ids, element_candidates):
+def _exact_common(raw_elements, element_candidates):
+    raw_element_ids = list(map(lambda x: x.id, raw_elements))
+    element_candidate_ids = list(map(lambda x: x.id, element_candidates))
     if len(element_candidate_ids) > 0:
         common_ids = set(raw_element_ids) & set(element_candidate_ids)
     else:
@@ -58,9 +58,11 @@ def _exact_common(raw_element_ids, element_candidates):
 
 
 def show_elements(c, element_candidates):
+    print(f"there are {len(element_candidates)} elements.")
     for i,  element in enumerate(element_candidates):
         path = _get_tree_location(element)
         print(f"{i}, {element.tagname}, len:{element}, {path}")
+    return element_candidates
 
 
 def show_an_element_detail(c, element_candidates):

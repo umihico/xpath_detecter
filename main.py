@@ -1,8 +1,15 @@
-from selenium.webdriver import Chrome
+from selenium.webdriver import Chrome, ChromeOptions
+
+
+def option_adding_xpath_helper():
+    options = ChromeOptions()
+    options.add_argument("--disable-infobars")
+    options.add_extension(r"chrome_extension_xpath_helper.crx")
+    return options
 
 
 def _main():
-    c = Chrome()
+    c = Chrome(chrome_options=option_adding_xpath_helper())
     element_candidates = []
     while True:
         func = _recv_commands()
@@ -38,6 +45,7 @@ def filter_by_xpath(c, element_candidates):
     xpath_ = input()
     try:
         raw_elements = c.find_elements_by_xpath(xpath_)
+        print(f"xpath found {len(raw_elements)} elements")
     except (Exception, ) as e:
         print(e)
         return element_candidates
@@ -53,7 +61,7 @@ def _exact_common(raw_elements, element_candidates):
         common_ids = set(raw_element_ids) & set(element_candidate_ids)
     else:
         common_ids = set(raw_element_ids)
-        common_elements = [e for e in element_candidates if e.id in common_ids]
+    common_elements = [e for e in raw_elements if e.id in common_ids]
     return common_elements
 
 

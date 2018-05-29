@@ -36,7 +36,11 @@ def _sort_elements(elements):
 def filter_by_xpath(c, element_candidates):
     print("input xpath:")
     xpath_ = input()
-    raw_elements = c.find_elements_by_xpath(xpath_)
+    try:
+        raw_elements = c.find_elements_by_xpath(xpath_)
+    except (Exception, ) as e:
+        print(e)
+        return element_candidates
     raw_element_ids = map(lambda x: x.id, raw_elements)
     element_candidate_ids = map(lambda x: x.id, element_candidates)
     common_elements = _exact_common(raw_element_ids, element_candidates)

@@ -1,6 +1,7 @@
 from selenium.webdriver import Chrome, ChromeOptions
 from lxml import html
 from bs4 import BeautifulSoup
+from traceback import format_exc
 
 
 def option_adding_xpath_helper():
@@ -79,6 +80,16 @@ def show_elements(c, element_candidates):
     return element_candidates
 
 
+def eval_mode(c, element_candidates):
+    print("interface mode. 'c' is Chrome.")
+    command = input()
+    try:
+        eval(command)
+    except (Exception, ) as e:
+        print(format_exc())
+    return element_candidates
+
+
 def print_outerHTML(c, element_candidates):
     print(f"input number (which command '{show_elements.__name__}' tell you):")
     number = input()
@@ -97,7 +108,7 @@ def print_outerHTML(c, element_candidates):
 
 def _show_an_element_detail_print_func(element):
     outerHTML = element.get_attribute("outerHTML")
-    soup = BeautifulSoup(outerHTML)
+    soup = BeautifulSoup(outerHTML, "lxml")
     print(element.tag_name)
     print(element.treepath)
     print(soup.prettify())
@@ -105,7 +116,7 @@ def _show_an_element_detail_print_func(element):
 
 def _recv_commands():
     funcs = [get_url, filter_by_xpath, show_elements,
-             print_outerHTML, reset_filtering]
+             print_outerHTML, reset_filtering, eval_mode]
     names = [_insert_bracket(f.__name__) for f in funcs]
     dict_input_to_names = {
         name[1: 4]:  func for name, func in zip(names, funcs)}
